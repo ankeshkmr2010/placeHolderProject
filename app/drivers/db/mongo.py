@@ -1,14 +1,14 @@
 # app/db/mongo.py
 from motor.motor_asyncio import AsyncIOMotorClient
+
+from app.drivers.configs.config import Config
 from app.drivers.db.base import BaseDBClient
 
-MONGO_URI = "mongodb://localhost:27017"
-DB_NAME = "mydb"
 
 class MongoClient(BaseDBClient):
     def __init__(self):
-        self.client = AsyncIOMotorClient(MONGO_URI)
-        self.db = self.client[DB_NAME]
+        self.client = AsyncIOMotorClient(Config.MONGO_URI)
+        self.db = self.client[Config.MONGO_DBNAME]
 
     async def connect(self):
         return self.db
