@@ -1,12 +1,16 @@
 from fastapi import FastAPI
 from app.routers import base_router
 from app.drivers.db.migrations import run_migration
+from app.routers.bonsen_demo_router import bonsen_router
+
 
 def fastapi_app() -> FastAPI:
     #run migrations
     run_migration()
     fapp = FastAPI(title="My FastAPI App",version="0.1.0")
-    fapp.include_router(base_router.router, prefix="/items")
+    fapp.add_api_route("/", lambda: {"message": "Welcome to the Ankesh's app!"}, methods=["GET"])
+    fapp.include_router(base_router.router, prefix="/tests")
+    fapp.include_router(bonsen_router, prefix="/bonsen", tags=["bonsen"])
     return fapp
 
 
