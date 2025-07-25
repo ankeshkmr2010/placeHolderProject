@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import List
 
+from fastapi import File
+
 
 class Fileparser(ABC):
     @abstractmethod
-    def parse_file(self, file: bytes) -> List[str]:
+    def parse_file(self, file: File) -> List[str]:
         """
         Parse the given file and return the extracted criteria as a dictionary.
 
