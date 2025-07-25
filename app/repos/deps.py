@@ -1,6 +1,5 @@
 from contextlib import asynccontextmanager
 
-from app.interfaces.file_parser import Fileparser
 
 
 @asynccontextmanager
