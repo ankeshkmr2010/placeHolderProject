@@ -1,21 +1,23 @@
 from fastapi import File
 from pypdf import PdfReader
-from docx  import Document
+from docx import Document
 from app.interfaces.file_parser import Fileparser
 
 
-
 class FileParserImpl(Fileparser):
+    """
+    Implementation of the Fileparser interface for handling file parsing.
+    This class provides methods to parse files of different formats, including PDF, plain text, and DOCX.
+    """
+
     async def parse_file(self, file: File) -> str:
         """
-        Parse the given file and return the extracted content as a string.
-        This method supports PDF, plain text, and DOCX files.
-        :param file: The file object containing the content to be parsed.
-        :return: A string containing the extracted content.
-        Raises ValueError if the file is invalid or unsupported.
-        Raises ValueError if the file does not have a valid filename or content type.
-        """
+        Parse the content of the provided file based on its type.
 
+        :param file: The file object to be parsed. Must have valid filename and content type.
+        :return: The extracted content of the file as a string.
+        :raises ValueError: If the file is invalid or unsupported.
+        """
         if not file:
             raise ValueError("No file provided")
         if not hasattr(file, 'filename') or not hasattr(file, 'content_type') or not hasattr(file, 'file'):
@@ -24,7 +26,7 @@ class FileParserImpl(Fileparser):
         if not file.filename or not file.content_type:
             raise ValueError("File must have a valid filename and content type")
 
-        content:str = ""
+        content: str = ""
         match file.content_type:
             case "application/pdf":
                 # Handle PDF file parsing
@@ -51,7 +53,12 @@ class FileParserImpl(Fileparser):
 
     @staticmethod
     def _parse_pdf(file: File) -> str:
-        # Implement PDF parsing logic here
+        """
+        Parse the content of a PDF file.
+
+        :param file: The PDF file object to be parsed.
+        :return: The extracted text content of the PDF file as a string.
+        """
         pdf_reader = PdfReader(file.file)
         text_content = []
         for page in pdf_reader.pages:
@@ -63,7 +70,12 @@ class FileParserImpl(Fileparser):
 
     @staticmethod
     def _parse_docx(file: File) -> str:
-        # Implement DOCX parsing logic here
+        """
+        Parse the content of a DOCX file.
+
+        :param file: The DOCX file object to be parsed.
+        :return: The extracted text content of the DOCX file as a string.
+        """
         doc = Document(file.file)
         text_content = []
         for para in doc.paragraphs:
@@ -71,4 +83,3 @@ class FileParserImpl(Fileparser):
                 text_content.append(para.text)
         doc_content = "\n".join(text_content)
         return doc_content
-
