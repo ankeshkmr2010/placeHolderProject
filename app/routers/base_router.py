@@ -13,7 +13,7 @@ router = APIRouter()
 async def list_items():
     return [{"id": 1, "name": "Foo"}, {"id": 2, "name": "Bar"}]
 
-@router.get("/both")
+@router.get("/bothDb")
 async def get_both():
     async with AsyncExitStack() as stack:
         pg = await stack.enter_async_context(get_postgres_client())
