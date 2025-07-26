@@ -8,5 +8,6 @@ class PromptProcessor(ABC):
         pass
 
     @abstractmethod
-    async def get_resume_processing_prompt(self, criterion:List[str], resumes:List[str]) -> list[str]:
+    async def get_resume_processing_prompt(self, criterion:List[str], resumes:List[str]) -> List[str]:
         pass
+

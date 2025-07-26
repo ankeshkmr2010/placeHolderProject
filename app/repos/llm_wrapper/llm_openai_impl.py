@@ -1,5 +1,5 @@
 import asyncio
-from typing import List
+from typing import List, Text
 
 from openai import AsyncOpenAI
 from openai import OpenAI
@@ -58,13 +58,14 @@ class OpenAiLlmWrapper(LlmClientWrapper):
             finally:
                 type(self).active_req -= 1
 
-    async def execute_multiple_prompts_parallel(self, reqs: List[GetCompletionReq]) -> List[str]:
+    async def execute_multiple_prompts_parallel(self, reqs: List[GetCompletionReq], text_format:type = Text) -> List[any]:
         """
         Execute multiple prompts in parallel using asyncio.gather.
+        :param text_format:
         :param reqs: List of GetCompletionReq objects.
         :return: List of responses from OpenAI.
         """
-        tasks = [self.get_completion(req) for req in reqs]
+        tasks = [self.get_completion(req, text_format) for req in reqs]
         return await asyncio.gather(*tasks, return_exceptions=True)
 
 

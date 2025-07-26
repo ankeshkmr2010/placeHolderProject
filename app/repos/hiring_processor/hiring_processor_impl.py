@@ -1,7 +1,8 @@
-from abc import ABC
+import asyncio
 from typing import List
 
 from fastapi import UploadFile
+from pydantic import BaseModel, Field
 
 from app.interfaces.file_parser import Fileparser
 from app.interfaces.hiring_processor import HiringProcessor
@@ -9,6 +10,18 @@ from app.interfaces.llm_wrapper import LlmClientWrapper
 from app.interfaces.prompt_exec import PromptProcessor
 from app.schemas.get_completion_reqs import GetCompletionReq
 from app.schemas.jd_criteria import JDCriteria
+
+
+class CriteriaScore(BaseModel):
+    criteria_name: str = Field(description="Name of the criteria for which the resume is scored")
+    score: float = Field(description="Score for the criteria, ranging from 0 to 5")
+
+class ResumeEvalResponse(BaseModel):
+    name: str = Field(description="Name of the candidate")
+    score: float = Field(description="Sum of all criteria scores of the individual criteria")
+    criteria_wise_score:List[CriteriaScore] = Field(description="List of scores for each criteria evaluated in the resume")
+
+
 
 
 class HiringProcessorImpl(HiringProcessor):
@@ -35,5 +48,13 @@ class HiringProcessorImpl(HiringProcessor):
         )
         return response
 
-    async def rank_resumes(self, jd_criteria: List[str], resumes: List[UploadFile]) -> List[dict]:
-        pass
+    async def rank_resumes(self, jd_criteria: JDCriteria, resumes: List[UploadFile]) -> List[ResumeEvalResponse]:
+        # parse resumes
+        text_tasks = [self.file_parser.parse_file(resume) for resume in resumes]
+        texts = await asyncio.gather(*text_tasks)
+        prompt = await self.promptExecutor.get_resume_processing_prompt(jd_criteria.criteria, texts)
+        # call llm client
+        reqs = [GetCompletionReq(model="gpt-4o-2024-08-06", prompt=p) for p in prompt]
+        responses = await self.llm_client.execute_multiple_prompts_parallel(reqs, text_format=ResumeEvalResponse)
+        return responses
+

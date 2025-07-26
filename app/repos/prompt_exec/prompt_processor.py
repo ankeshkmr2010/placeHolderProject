@@ -17,7 +17,7 @@ class PromptProcessorImpl(PromptProcessor):
         prompts = []
         for resume in resumes:
             prompt = Template(Prompts.RESUME_PROCESSING_PROMPT).render(
-                criteria=", ".join(criterion), resume=resume
+                criteria=criterion, resume=resume
             )
             prompts.append(prompt)
         return prompts

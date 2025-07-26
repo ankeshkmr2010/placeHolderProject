@@ -12,5 +12,5 @@ class HiringProcessor(ABC):
 
 
     @abstractmethod
-    async def rank_resumes(self, jd_criteria: List[str], resumes: List[UploadFile]) -> List[dict]:
+    async def rank_resumes(self, jd_criteria: JDCriteria, resumes: List[UploadFile]) -> List[dict]:
         pass
