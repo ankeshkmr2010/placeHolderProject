@@ -26,7 +26,6 @@ class FileParserImpl(Fileparser):
         if not file.filename or not file.content_type:
             raise ValueError("File must have a valid filename and content type")
 
-        content: str = ""
         match file.content_type:
             case "application/pdf":
                 # Handle PDF file parsing

@@ -5,7 +5,7 @@ from fastapi import UploadFile
 from app.schemas.jd_criteria import JDCriteria
 
 
-class HiringProcessor(ABC):
+class EvaluatorEngine(ABC):
     @abstractmethod
     async def extract_jd_criteria(self, file: UploadFile) ->JDCriteria:
         pass

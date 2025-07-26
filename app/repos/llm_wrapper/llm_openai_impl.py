@@ -2,12 +2,10 @@ import asyncio
 from typing import List, Text
 
 from openai import AsyncOpenAI
-from openai import OpenAI
 
 from app.drivers.configs.config import Config
 from app.interfaces.llm_wrapper import LlmClientWrapper
 from app.schemas.get_completion_reqs import GetCompletionReq
-from app.schemas.jd_criteria import JDCriteria
 
 
 class OpenAiLlmWrapper(LlmClientWrapper):
