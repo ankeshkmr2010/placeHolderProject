@@ -1,12 +1,13 @@
 import asyncio
-from sys import implementation
 from typing import List
 
 from openai import AsyncOpenAI
+from openai import OpenAI
 
 from app.drivers.configs.config import Config
 from app.interfaces.llm_wrapper import LlmClientWrapper
-from app.schemas.GetCompletionReq import GetCompletionReq
+from app.schemas.get_completion_reqs import GetCompletionReq
+from app.schemas.jd_criteria import JDCriteria
 
 
 class OpenAiLlmWrapper(LlmClientWrapper):
@@ -16,19 +17,22 @@ class OpenAiLlmWrapper(LlmClientWrapper):
     """
 
     client = None  # OpenAI client instance
+    cl = None
     active_req = 0
     sem = asyncio.Semaphore(100)  # Limit to 100 concurrent requests
 
     @staticmethod
     def set_client(api_key: str):
-        """
-        Set the OpenAI client with the provided API key.
-        :param api_key: The API key for OpenAI.
-        """
         OpenAiLlmWrapper.client = AsyncOpenAI(api_key=api_key)
 
-
-    async def get_completion(self, req: GetCompletionReq) -> str:
+    async def get_completion(self, req: GetCompletionReq, text_format:type = type(str)) -> any:
+        """
+        Get completion from OpenAI for a given request.
+        This method checks if the OpenAI client is initialized and manages concurrent requests using a semaphore.
+        :param text_format:
+        :param req:
+        :return:
+        """
         if type(self).client is None:
             raise Exception("OpenAI client is not initialized. Please set the API key using set_client method.")
 
@@ -39,14 +43,15 @@ class OpenAiLlmWrapper(LlmClientWrapper):
         async with type(self).sem:
             type(self).active_req += 1
             try:
-                response = await type(self).client.chat.completions.create(
+                response = await type(self).client.responses.parse(
                     model=req.model,
-                    messages=[ {"role": "user", "content": req.prompt} ],
-                    temperature=req.temperature,
-                    max_tokens=req.max_tokens,
+                    input=[{"role": "user", "content": req.prompt}],
+                    text_format =text_format
                 )
-                print("Completed")
-                return response.choices[0].message.content
+
+                criteria = response.output_parsed
+
+                return criteria
             except Exception as e:
                 print(f"Error in OpenAI request: {e}")
                 raise e
@@ -63,9 +68,10 @@ class OpenAiLlmWrapper(LlmClientWrapper):
         return await asyncio.gather(*tasks, return_exceptions=True)
 
 
+
 if __name__ == "__main__":
     import asyncio
-    from app.schemas.GetCompletionReq import GetCompletionReq
+    from app.schemas.get_completion_reqs import GetCompletionReq
 
     async def main():
         Config.init_config()  # Initialize configuration

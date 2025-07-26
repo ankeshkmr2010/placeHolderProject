@@ -6,7 +6,7 @@ from fastapi import File
 
 class Fileparser(ABC):
     @abstractmethod
-    def parse_file(self, file: File) -> List[str]:
+    async def parse_file(self, file: File) -> str:
         """
         Parse the given file and return the extracted criteria as a dictionary.
 

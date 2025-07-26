@@ -6,7 +6,7 @@ from app.interfaces.file_parser import Fileparser
 
 
 class FileParserImpl(Fileparser):
-    def parse_file(self, file: File) -> str:
+    async def parse_file(self, file: File) -> str:
         """
         Parse the given file and return the extracted content as a string.
         This method supports PDF, plain text, and DOCX files.
@@ -67,7 +67,8 @@ class FileParserImpl(Fileparser):
         doc = Document(file.file)
         text_content = []
         for para in doc.paragraphs:
-            text_content.append(para.text)
+            if para.text:
+                text_content.append(para.text)
         doc_content = "\n".join(text_content)
         return doc_content
 
