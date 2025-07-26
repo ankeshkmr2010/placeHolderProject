@@ -14,6 +14,7 @@ class Config:
     MONGO_PORT:str = ""
     MONGO_DBNAME:str = "mydb"
     SVC_ENV:str = "local"
+    OPEN_AI_API_KEY:str = ""
     _populated:str = False
 
 
@@ -61,6 +62,7 @@ class Config:
         Config.MONGO_HOST = os.environ.get("MONGO_HOST")
         Config.MONGO_PORT = os.environ.get("MONGO_PORT")
         Config.MONGO_DBNAME = os.environ.get("MONGO_DBNAME")
+        Config.OPEN_AI_API_KEY = os.environ.get("OPEN_AI_API_KEY")
 
 
 
