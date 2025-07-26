@@ -1,8 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, UploadFile
-
-
+from fastapi import APIRouter, UploadFile, File, Form
 
 from app.repos.deps import get_file_parser, get_evaluator_engine
 from app.schemas.jd_criteria import JDCriteria
@@ -28,10 +26,14 @@ async def extract_criteria(ufile: UploadFile):
 
 @bonsen_router.post("/score-resumes")
 async def score_resumes(
-    criteria: List[str],
-    resumes: list[UploadFile],
+    criteria: List[str]= Form(...),
+    resumes: list[UploadFile] = File(...),
 ):
     evaluator_engine = get_evaluator_engine()
+    for cri in criteria:
+        if not cri:
+            raise ValueError("Criteria cannot be empty")
     jd_criteria = JDCriteria(criteria=criteria)
-    scores = await evaluator_engine.rank_resumes(jd_criteria, resumes)
-    return scores
+    score_file = await evaluator_engine.rank_resumes(jd_criteria, resumes)
+    return {"score_file": score_file.name}
+

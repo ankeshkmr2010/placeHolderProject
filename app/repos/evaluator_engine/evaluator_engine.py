@@ -10,6 +10,8 @@ from app.interfaces.llm_wrapper import LlmClientWrapper
 from app.interfaces.prompt_exec import PromptProcessor
 from app.schemas.get_completion_reqs import GetCompletionReq
 from app.schemas.jd_criteria import JDCriteria
+import tempfile
+import csv
 
 
 class CriteriaScore(BaseModel):
@@ -48,7 +50,7 @@ class EvaluatorEngineImpl(EvaluatorEngine):
         )
         return response
 
-    async def rank_resumes(self, jd_criteria: JDCriteria, resumes: List[UploadFile]) -> List[ResumeEvalResponse]:
+    async def rank_resumes(self, jd_criteria: JDCriteria, resumes: List[UploadFile]) -> tempfile.NamedTemporaryFile:
         # parse resumes
         text_tasks = [self.file_parser.parse_file(resume) for resume in resumes]
         texts = await asyncio.gather(*text_tasks)
@@ -56,5 +58,25 @@ class EvaluatorEngineImpl(EvaluatorEngine):
         # call llm client
         reqs = [GetCompletionReq(model="gpt-4o-2024-08-06", prompt=p) for p in prompt]
         responses = await self.llm_client.execute_multiple_prompts_parallel(reqs, text_format=ResumeEvalResponse)
-        return responses
+        # write responses to a file
+
+        temp_file = tempfile.NamedTemporaryFile(delete=False, mode='w', suffix='.csv', newline='')
+        csv_writer = csv.writer(temp_file)
+
+        # Write headers and responses to the CSV file
+        header_row = ["CandidateName"] + jd_criteria.criteria + ["TotalScore"]
+        print(f"Header Row: {header_row}")
+        csv_writer.writerow(header_row)
+
+        for response in responses:
+            if isinstance(response, Exception):
+                print(f"Error processing response: {response}")
+                continue
+            if isinstance(response, ResumeEvalResponse):
+                data_row = [response.name] + [score.score for score in response.criteria_wise_score] + [response.score]
+                csv_writer.writerow(data_row)
+
+        temp_file.close()
+
+        return temp_file
 

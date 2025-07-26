@@ -1,3 +1,4 @@
+import tempfile
 from abc import ABC, abstractmethod
 from typing import List
 from fastapi import UploadFile
@@ -12,5 +13,5 @@ class EvaluatorEngine(ABC):
 
 
     @abstractmethod
-    async def rank_resumes(self, jd_criteria: JDCriteria, resumes: List[UploadFile]) -> List[dict]:
+    async def rank_resumes(self, jd_criteria: JDCriteria, resumes: List[UploadFile]) -> tempfile.NamedTemporaryFile():
         pass
