@@ -32,11 +32,12 @@ def fastapi_app() -> FastAPI:
     Returns:
         FastAPI: The configured FastAPI application instance.
     """
+    # Initialize application configuration
+    Config.init_config()
+
     # Run database migrations
     run_migration()
 
-    # Initialize application configuration
-    Config.init_config()
 
     # Set up the OpenAI LLM client
     OpenAiLlmWrapper.set_client(Config.OPEN_AI_API_KEY)
@@ -63,7 +64,9 @@ def hello_world() -> Dict[str, str]:
     """
     return {"message": "Hello, World!"}
 
+app = fastapi_app()  # Create the FastAPI application instance
 
+# Create the FastAPI application instance
 if __name__ == "__main__":
     """
     Entry point for running the FastAPI application.
@@ -72,4 +75,6 @@ if __name__ == "__main__":
     """
     logger.info("Starting FastAPI application...")
     import uvicorn
-    uvicorn.run(fastapi_app(), host="0.0.0.0", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=8080)
+
+

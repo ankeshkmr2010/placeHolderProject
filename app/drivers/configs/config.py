@@ -1,3 +1,4 @@
+import json
 import os
 
 
@@ -15,11 +16,15 @@ class Config:
     MONGO_DBNAME:str = "mydb"
     SVC_ENV:str = "local"
     OPEN_AI_API_KEY:str = ""
+    REDIS_HOST:str = ""
+    REDIS_PORT:str = ""
+    REDIS_URI:str = ""
     _populated:str = False
 
 
     @staticmethod
     def init_config():
+        print(">   Populating Config...")
         if Config._populated:
             raise Exception("Config is already populated. Attempting to populate again")
         # populate defaults
@@ -36,14 +41,14 @@ class Config:
 
     @staticmethod
     def _populate_default_config():
-        Config.POSTGRES_DB = "personal"
-        Config.POSTGRES_HOST = "localhost"
-        Config.POSTGRES_PORT = "5432"
-        Config.POSTGRES_USER = "postgres"
-        Config.POSTGRES_PASSWORD = "postgres"
-        Config.MONGO_HOST = "localhost"
-        Config.MONGO_DBNAME = "mydb"
-        Config.MONGO_PORT = "27017"
+        # Config.POSTGRES_DB = "personal"
+        # Config.POSTGRES_HOST = "localhost"
+        # Config.POSTGRES_PORT = "5432"
+        # Config.POSTGRES_USER = "postgres"
+        # Config.POSTGRES_PASSWORD = "postgres"
+        # Config.MONGO_HOST = "localhost"
+        # Config.MONGO_DBNAME = "mydb"
+        # Config.MONGO_PORT = "27017"
         pass
 
     @staticmethod
@@ -63,6 +68,9 @@ class Config:
         Config.MONGO_PORT = os.environ.get("MONGO_PORT")
         Config.MONGO_DBNAME = os.environ.get("MONGO_DBNAME")
         Config.OPEN_AI_API_KEY = os.environ.get("OPEN_AI_API_KEY")
+        Config.REDIS_HOST = os.environ.get("REDIS_HOST")
+        Config.REDIS_PORT = os.environ.get("REDIS_PORT")
+        print(f">POSTGRES   Config populated from env: {Config.POSTGRES_HOST}")
 
 
 
@@ -71,6 +79,7 @@ class Config:
         Config.POSTGRES_URL = f"postgresql+asyncpg://{Config.POSTGRES_USER}:{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:{Config.POSTGRES_PORT}/{Config.POSTGRES_DB}"
         Config.YOYO_POSTGRES = Config.POSTGRES_URL.replace("+asyncpg", "")
         Config.MONGO_URI = f"mongodb://{Config.MONGO_HOST}:{Config.MONGO_PORT}"
+        Config.REDIS_URI = f"redis://{Config.REDIS_HOST}:{Config.REDIS_PORT}"
 
 
 
