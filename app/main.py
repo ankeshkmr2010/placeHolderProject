@@ -36,7 +36,7 @@ def fastapi_app() -> FastAPI:
     Config.init_config()
 
     # Run database migrations
-    run_migration()
+    # run_migration()
 
 
     # Set up the OpenAI LLM client
