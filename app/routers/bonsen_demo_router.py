@@ -3,41 +3,87 @@ from typing import List
 
 from fastapi import APIRouter, UploadFile, File, Form
 from fastapi.params import Depends
+from starlette.responses import FileResponse
 
 from app.drivers.cache.deps import get_redis_client
 from app.repos.deps import get_file_parser, get_evaluator_engine
-from app.routers.base_router import get_redis_data
 from app.schemas.jd_criteria import JDCriteria
 
+# Create an API router for Bonsen-related endpoints
 bonsen_router = APIRouter()
+
 
 @bonsen_router.get("/ping")
 async def ping():
+    """
+    Health check endpoint.
+
+    Returns:
+        dict: A dictionary containing a "pong" message.
+    """
     return {"message": "pong"}
+
 
 @bonsen_router.post("/parse-file")
 async def parse_input(ufile: UploadFile):
+    """
+    Endpoint to parse the content of an uploaded file.
+
+    Args:
+        ufile (UploadFile): The uploaded file to be parsed.
+
+    Returns:
+        dict: A dictionary containing the parsed file content.
+    """
     file_parser = get_file_parser()
     a = await file_parser.parse_file(ufile)
     return {"file_content": a}
 
 
-@bonsen_router.post("/extract-criteria")
+@bonsen_router.post("/extract-criteria", response_model=JDCriteria)
 async def extract_criteria(ufile: UploadFile, redis=Depends(get_redis_client)):
+    """
+    Endpoint to extract job description criteria from an uploaded file.
+
+    Args:
+        ufile (UploadFile): The uploaded file containing the job description.
+        redis (Redis): Redis client dependency.
+
+    Returns:
+        JDCriteria: The extracted job description criteria.
+
+    Raises:
+        ValueError: If the Redis client is not available.
+    """
     async with AsyncExitStack() as stack:
         redis = await stack.enter_async_context(redis)
         if not redis:
             raise ValueError("Redis client is not available")
-        evaluatort_engine =  get_evaluator_engine(redis)
+        evaluatort_engine = get_evaluator_engine(redis)
         criteria = await evaluatort_engine.extract_jd_criteria(ufile)
         return criteria
 
-@bonsen_router.post("/score-resumes")
+
+@bonsen_router.post("/score-resumes", response_class=FileResponse)
 async def score_resumes(
-    criteria: List[str]= Form(...),
-    resumes: list[UploadFile] = File(...),
-    redis=Depends(get_redis_client)
+        criteria: List[str] = Form(...),
+        resumes: list[UploadFile] = File(...),
+        redis=Depends(get_redis_client)
 ):
+    """
+    Endpoint to score resumes based on job description criteria.
+
+    Args:
+        criteria (List[str]): A list of criteria extracted from the job description.
+        resumes (list[UploadFile]): A list of uploaded resume files.
+        redis (Redis): Redis client dependency.
+
+    Returns:
+        FileResponse: A CSV file containing the ranked resumes.
+
+    Raises:
+        ValueError: If the Redis client is not available or criteria are empty.
+    """
     async with AsyncExitStack() as stack:
         redis = await stack.enter_async_context(redis)
         if not redis:
@@ -50,5 +96,5 @@ async def score_resumes(
                 raise ValueError("Criteria cannot be empty")
         jd_criteria = JDCriteria(criteria=criteria)
         score_file = await evaluator_engine.rank_resumes(jd_criteria, resumes)
-        return {"score_file": score_file.name}
-
+        f = FileResponse(score_file.name, media_type="text/csv", filename="results.csv")
+        return f

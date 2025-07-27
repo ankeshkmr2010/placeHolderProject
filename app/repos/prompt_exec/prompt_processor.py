@@ -1,6 +1,6 @@
-from app.interfaces.prompt_exec import PromptProcessor
 from jinja2 import Template
 
+from app.interfaces.prompt_exec import PromptProcessor
 from app.repos.prompt_exec.prompts import Prompts
 
 

@@ -1,6 +1,7 @@
+from docx import Document
 from fastapi import File
 from pypdf import PdfReader
-from docx import Document
+
 from app.interfaces.file_parser import Fileparser
 
 

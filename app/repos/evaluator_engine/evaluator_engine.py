@@ -1,18 +1,17 @@
 import asyncio
-import json
-from typing import List
+import csv
 import logging
+import tempfile
+from typing import List
+
 from fastapi import UploadFile
 
-from app.interfaces.file_parser import Fileparser
 from app.interfaces.evaluator_engine import EvaluatorEngine
+from app.interfaces.file_parser import Fileparser
 from app.interfaces.llm_wrapper import LlmClientWrapper
 from app.interfaces.prompt_exec import PromptProcessor
 from app.schemas.get_completion_reqs import GetCompletionReq
 from app.schemas.jd_criteria import JDCriteria
-import tempfile
-import csv
-
 from app.schemas.resume_eval_result import ResumeEvalResponse
 
 logger = logging.getLogger(__name__)

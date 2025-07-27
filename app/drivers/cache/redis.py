@@ -1,6 +1,6 @@
 from typing import Any
 
-import  redis.asyncio as redis
+import redis.asyncio as redis
 
 from app.drivers.cache.base import BaseCache
 

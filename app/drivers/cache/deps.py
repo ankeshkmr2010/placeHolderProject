@@ -1,5 +1,7 @@
 from contextlib import asynccontextmanager
+
 from app.drivers.cache.redis import RedisCache
+
 
 @asynccontextmanager
 async def get_redis_client():
