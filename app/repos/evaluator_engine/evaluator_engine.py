@@ -73,12 +73,16 @@ class EvaluatorEngineImpl(EvaluatorEngine):
             if isinstance(response, Exception):
                 logger.info(f"Error processing response: {response}")
                 continue
+            # logger.info(f"For {response.name} ---------")
             if isinstance(response, ResumeEvalResponse):
                 score_dict = {score.criteria_name: score.score for score in response.criteria_wise_score}
+                # score_evidence = {score.criteria_name: (score.score,score.evidence) for score in response.criteria_wise_score}
+                # [logger.info(f"\t Criteria: {criteria}, Score: {score}, Evidence: {evidence}") for criteria, (score, evidence) in score_evidence.items()]
                 data_row = [response.name]
                 data_row += [score_dict.get(criteria, 0) for criteria in jd_criteria.criteria]
                 data_row += [response.score]
                 csv_writer.writerow(data_row)
+            # logger.info("----------")
 
         temp_file.close()
 
