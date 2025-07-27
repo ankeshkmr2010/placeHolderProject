@@ -1,6 +1,7 @@
 import asyncio
+import json
 from typing import List
-
+import logging
 from fastapi import UploadFile
 
 from app.interfaces.file_parser import Fileparser
@@ -14,14 +15,26 @@ import csv
 
 from app.schemas.resume_eval_result import ResumeEvalResponse
 
-
+logger = logging.getLogger(__name__)
 class EvaluatorEngineImpl(EvaluatorEngine):
+    """
+    Implementation of the EvaluatorEngine interface that handles the extraction of job description criteria and the ranking of resumes based on those criteria.
+    This class uses a file parser to extract text from files, a prompt processor to generate prompts
+    """
     def __init__(self, file_parser:Fileparser,prompt_processor:PromptProcessor, llm_client:LlmClientWrapper):
         self.promptExecutor: PromptProcessor = prompt_processor
         self.file_parser: Fileparser = file_parser
         self.llm_client:LlmClientWrapper = llm_client
 
     async def extract_jd_criteria(self, file: UploadFile) -> JDCriteria:
+        """
+        Extracts job description criteria from a given file.
+        This method parses the file to extract text, generates a prompt for job description extraction,
+        and then uses the LLM client to get a structured response containing the job description criteria.
+        The response is expected to be in the format of a JDCriteria object.
+        :param file:
+        :return JDCriteria: JDCriteria object containing the extracted job description criteria.
+        """
         # parse file
         jd_text =await self.file_parser.parse_file(file)
         # get prompt for jd extraction
@@ -54,15 +67,18 @@ class EvaluatorEngineImpl(EvaluatorEngine):
 
         # Write headers and responses to the CSV file
         header_row = ["CandidateName"] + jd_criteria.criteria + ["TotalScore"]
-        print(f"Header Row: {header_row}")
+        # print(f"Header Row: {header_row}")
         csv_writer.writerow(header_row)
 
         for response in responses:
             if isinstance(response, Exception):
-                print(f"Error processing response: {response}")
+                logger.info(f"Error processing response: {response}")
                 continue
             if isinstance(response, ResumeEvalResponse):
-                data_row = [response.name] + [score.score for score in response.criteria_wise_score] + [response.score]
+                score_dict = {score.criteria_name: score.score for score in response.criteria_wise_score}
+                data_row = [response.name]
+                data_row += [score_dict.get(criteria, 0) for criteria in jd_criteria.criteria]
+                data_row += [response.score]
                 csv_writer.writerow(data_row)
 
         temp_file.close()

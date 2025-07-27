@@ -51,9 +51,7 @@ class OpenAiLlmWrapper(LlmClientWrapper):
         # print("for req", req.prompt, "active requests:", type(self).active_req)
         cache_key = self._generate_redis_key(req.prompt, text_format)
         cached_response = await self.rediscache.get(cache_key)
-        criteria = None
         if cached_response:
-            print(f"Cache hit for prompt: {req.prompt}")
             if isinstance(cached_response, Exception):
                 print(f"Cached response is an error: {cached_response}")
                 raise cached_response
@@ -62,9 +60,7 @@ class OpenAiLlmWrapper(LlmClientWrapper):
             except Exception as e:
                 print(f"Error parsing cached response: {e}")
                 raise e
-
             return criteria
-        print(f"Cache miss: {cache_key}, making API call...")
 
         async with type(self).sem:
             type(self).active_req += 1
