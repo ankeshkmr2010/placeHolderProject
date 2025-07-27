@@ -1,7 +1,7 @@
 from contextlib import AsyncExitStack
 from typing import List
 
-from fastapi import APIRouter, UploadFile, File, Form
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.params import Depends
 from starlette.responses import FileResponse
 
@@ -58,10 +58,14 @@ async def extract_criteria(ufile: UploadFile, redis=Depends(get_redis_client)):
     async with AsyncExitStack() as stack:
         redis = await stack.enter_async_context(redis)
         if not redis:
-            raise ValueError("Redis client is not available")
-        evaluatort_engine = get_evaluator_engine(redis)
-        criteria = await evaluatort_engine.extract_jd_criteria(ufile)
-        return criteria
+            raise HTTPException(status_code=500, detail="Redis client is not available")
+
+        try:
+            evaluatort_engine = get_evaluator_engine(redis)
+            criteria = await evaluatort_engine.extract_jd_criteria(ufile)
+            return criteria
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error extracting criteria: {str(e)}")
 
 
 @bonsen_router.post("/score-resumes", response_class=FileResponse)
@@ -87,14 +91,16 @@ async def score_resumes(
     async with AsyncExitStack() as stack:
         redis = await stack.enter_async_context(redis)
         if not redis:
-            raise ValueError("Redis client is not available")
-        if redis is None:
-            raise ValueError("Redis client is not available")
-        evaluator_engine = get_evaluator_engine(redis)
-        for cri in criteria:
-            if not cri:
-                raise ValueError("Criteria cannot be empty")
-        jd_criteria = JDCriteria(criteria=criteria)
-        score_file = await evaluator_engine.rank_resumes(jd_criteria, resumes)
-        f = FileResponse(score_file.name, media_type="text/csv", filename="results.csv")
-        return f
+            raise HTTPException(status_code=500, detail="Redis client is not available")
+        try:
+
+            evaluator_engine = get_evaluator_engine(redis)
+            for cri in criteria:
+                if not cri:
+                    raise HTTPException(status_code=400, detail="Criteria cannot be empty")
+            jd_criteria = JDCriteria(criteria=criteria)
+            score_file = await evaluator_engine.rank_resumes(jd_criteria, resumes)
+            f = FileResponse(score_file.name, media_type="text/csv", filename="results.csv")
+            return f
+        except ValueError as ve:
+            raise HTTPException(status_code=400, detail=f"Exception while scoring resumes {str(ve)}")

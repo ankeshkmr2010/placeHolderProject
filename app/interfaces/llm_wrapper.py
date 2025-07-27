@@ -16,7 +16,7 @@ class LlmClientWrapper(ABC):
     """
 
     @abstractmethod
-    async def get_completion(self, req: GetCompletionReq, text_format: BaseModel) -> any:
+    async def execute_prompt(self, req: GetCompletionReq, text_format: BaseModel) -> any:
         """
         Abstract method to get a completion response from the LLM client.
 

@@ -31,7 +31,7 @@ class OpenAiLlmWrapper(LlmClientWrapper):
             raise Exception("OpenAI client is not initialized. Please set the API key using set_client method.")
         self.rediscache = rediscache
 
-    async def get_completion(self, req: GetCompletionReq, text_format:BaseModel) -> any:
+    async def execute_prompt(self, req: GetCompletionReq, text_format:BaseModel) -> any:
         """
         Asynchronously retrieves a completion from OpenAI's API based on the provided request.
         Utilizes Redis for caching responses to reduce API calls and improve performance.
@@ -99,7 +99,7 @@ class OpenAiLlmWrapper(LlmClientWrapper):
         :return:
         """
 
-        tasks = [self.get_completion(req, text_format) for req in reqs]
+        tasks = [self.execute_prompt(req, text_format) for req in reqs]
         return await asyncio.gather(*tasks, return_exceptions=True)
 
     @staticmethod

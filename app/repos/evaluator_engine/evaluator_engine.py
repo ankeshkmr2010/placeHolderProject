@@ -41,7 +41,7 @@ class EvaluatorEngineImpl(EvaluatorEngine):
             return JDCriteria()
         prompt = await self.promptExecutor.get_jd_extraction_prompt(jd_text)
         # call llm client
-        response = await self.llm_client.get_completion(
+        response = await self.llm_client.execute_prompt(
             GetCompletionReq(
                 model="gpt-4o-2024-08-06",
                 prompt=prompt,
