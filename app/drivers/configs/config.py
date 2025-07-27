@@ -70,7 +70,6 @@ class Config:
         Config.OPEN_AI_API_KEY = os.environ.get("OPEN_AI_API_KEY")
         Config.REDIS_HOST = os.environ.get("REDIS_HOST")
         Config.REDIS_PORT = os.environ.get("REDIS_PORT")
-        print(f">POSTGRES   Config populated from env: {Config.POSTGRES_HOST}")
 
 
 

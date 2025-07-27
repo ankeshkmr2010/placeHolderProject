@@ -49,7 +49,7 @@ def fastapi_app() -> FastAPI:
     fapp.add_api_route("/", hello_world, methods=["GET"])
 
     # Include routers for additional endpoints
-    fapp.include_router(base_router.router, prefix="/tests")
+    # fapp.include_router(base_router.router, prefix="/tests")
     fapp.include_router(bonsen_router, prefix="/bonsen", tags=["bonsen"])
 
     return fapp

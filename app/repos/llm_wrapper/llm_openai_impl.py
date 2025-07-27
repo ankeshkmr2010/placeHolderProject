@@ -5,6 +5,7 @@ from typing import List, Text
 from openai import AsyncOpenAI
 from pydantic import BaseModel
 
+from app.constants import MAX_SEMAPHORE_COUNT_FOR_OPENAI, MAX_PARALLEL_OPENAI_REQS, TTL_FOR_OPENAI_CACHE
 from app.drivers.cache.redis import RedisCache
 from app.drivers.configs.config import Config
 from app.interfaces.llm_wrapper import LlmClientWrapper
@@ -20,7 +21,7 @@ class OpenAiLlmWrapper(LlmClientWrapper):
     client = None  # OpenAI client instance
     cl = None
     active_req = 0
-    sem = asyncio.Semaphore(100)
+    sem = asyncio.Semaphore(MAX_SEMAPHORE_COUNT_FOR_OPENAI)
 
     @staticmethod
     def set_client(api_key: str):
@@ -45,7 +46,7 @@ class OpenAiLlmWrapper(LlmClientWrapper):
         if type(self).client is None:
             raise Exception("OpenAI client is not initialized. Please set the API key using set_client method.")
 
-        if type(self).active_req >= 100:
+        if type(self).active_req >= MAX_PARALLEL_OPENAI_REQS:
             raise Exception("Too many concurrent requests, please try again later.")
 
         # print("for req", req.prompt, "active requests:", type(self).active_req)
@@ -80,7 +81,7 @@ class OpenAiLlmWrapper(LlmClientWrapper):
                     raise ValueError("No criteria extracted from OpenAI response.")
 
                 criteria_json = criteria.json() if hasattr(criteria, "json") else str(criteria)
-                await self.rediscache.set(cache_key, criteria_json, 3600)  # Cache for 1 hour
+                await self.rediscache.set(cache_key, criteria_json, TTL_FOR_OPENAI_CACHE)  # Cache for 1 hour
 
                 return criteria
             except Exception as e:
@@ -126,9 +127,9 @@ if __name__ == "__main__":
         Config.init_config()  # Initialize configuration
         wrapper = OpenAiLlmWrapper()
         wrapper.set_client(Config.OPEN_AI_API_KEY)
-        req = GetCompletionReq(model="gpt-3.5-turbo", prompt="Hello! Please tell me a joke", max_tokens=50)
-        req2 = GetCompletionReq(model="gpt-3.5-turbo", prompt="Name a random country and its capital?", max_tokens=50)
-        req3 = GetCompletionReq(model="gpt-3.5-turbo", prompt="what would you say is better a bmw 7 series or an audi a8", max_tokens=100)
+        req = GetCompletionReq(model="gpt-3.5-turbo", prompt="Hello! Please tell me a joke")
+        req2 = GetCompletionReq(model="gpt-3.5-turbo", prompt="Name a random country and its capital?")
+        req3 = GetCompletionReq(model="gpt-3.5-turbo", prompt="what would you say is better a bmw 7 series or an audi a8")
         response = await wrapper.execute_multiple_prompts_parallel([req, req2, req3])
         print(response)
 

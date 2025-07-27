@@ -5,6 +5,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.params import Depends
 from starlette.responses import FileResponse
 
+from app.constants import MAX_NUM_FILES
 from app.drivers.cache.deps import get_redis_client
 from app.repos.deps import get_file_parser, get_evaluator_engine
 from app.schemas.jd_criteria import JDCriteria
@@ -93,11 +94,13 @@ async def score_resumes(
         if not redis:
             raise HTTPException(status_code=500, detail="Redis client is not available")
         try:
-
             evaluator_engine = get_evaluator_engine(redis)
             for cri in criteria:
                 if not cri:
                     raise HTTPException(status_code=400, detail="Criteria cannot be empty")
+            if len(resumes) > MAX_NUM_FILES:
+                raise HTTPException(status_code=400, detail=f"Cannot process more than {MAX_NUM_FILES} files at a time")
+
             jd_criteria = JDCriteria(criteria=criteria)
             score_file = await evaluator_engine.rank_resumes(jd_criteria, resumes)
             f = FileResponse(score_file.name, media_type="text/csv", filename="results.csv")
