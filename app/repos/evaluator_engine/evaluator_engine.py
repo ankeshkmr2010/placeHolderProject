@@ -2,7 +2,6 @@ import asyncio
 from typing import List
 
 from fastapi import UploadFile
-from pydantic import BaseModel, Field
 
 from app.interfaces.file_parser import Fileparser
 from app.interfaces.evaluator_engine import EvaluatorEngine
@@ -13,17 +12,7 @@ from app.schemas.jd_criteria import JDCriteria
 import tempfile
 import csv
 
-
-class CriteriaScore(BaseModel):
-    criteria_name: str = Field(description="Name of the criteria for which the resume is scored")
-    score: float = Field(description="Score for the criteria, ranging from 0 to 5")
-
-class ResumeEvalResponse(BaseModel):
-    name: str = Field(description="Name of the candidate")
-    score: float = Field(description="Sum of all criteria scores of the individual criteria")
-    criteria_wise_score:List[CriteriaScore] = Field(description="List of scores for each criteria evaluated in the resume")
-
-
+from app.schemas.resume_eval_result import ResumeEvalResponse
 
 
 class EvaluatorEngineImpl(EvaluatorEngine):

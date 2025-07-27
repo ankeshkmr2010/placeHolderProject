@@ -1,3 +1,5 @@
+from typing import Any
+
 import  redis.asyncio as redis
 
 from app.drivers.cache.base import BaseCache
@@ -19,7 +21,7 @@ class RedisCache(BaseCache):
     async def get(self, key: str):
         return await self.client.get(key)
 
-    async def set(self, key: str, value: str, ex: int = None):
+    async def set(self, key: str, value: Any, ex: int = None):
         return await self.client.set(key, value, ex=ex)
 
     async def delete(self, key: str):

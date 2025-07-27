@@ -1,8 +1,11 @@
 import asyncio
+import hashlib
 from typing import List, Text
 
 from openai import AsyncOpenAI
+from pydantic import BaseModel
 
+from app.drivers.cache.redis import RedisCache
 from app.drivers.configs.config import Config
 from app.interfaces.llm_wrapper import LlmClientWrapper
 from app.schemas.get_completion_reqs import GetCompletionReq
@@ -10,27 +13,35 @@ from app.schemas.get_completion_reqs import GetCompletionReq
 
 class OpenAiLlmWrapper(LlmClientWrapper):
     """
-    OpenAI LLM client wrapper for handling requests to OpenAI's API.
-    This class manages concurrent requests and provides methods to get completions and execute multiple prompts in parallel.
+    OpenAI LLM client wrapper for handling asynchronous requests to OpenAI's API.
+    Supports concurrent prompt execution, response caching, and parallel processing of multiple prompts.
+    Provides methods for retrieving completions and managing request limits.
     """
-
     client = None  # OpenAI client instance
     cl = None
     active_req = 0
-    sem = asyncio.Semaphore(100)  # Limit to 100 concurrent requests
+    sem = asyncio.Semaphore(100)
 
     @staticmethod
     def set_client(api_key: str):
         OpenAiLlmWrapper.client = AsyncOpenAI(api_key=api_key)
 
-    async def get_completion(self, req: GetCompletionReq, text_format:type = type(str)) -> any:
+    def __init__(self, rediscache:RedisCache):
+        if OpenAiLlmWrapper.client is None:
+            raise Exception("OpenAI client is not initialized. Please set the API key using set_client method.")
+        self.rediscache = rediscache
+
+    async def get_completion(self, req: GetCompletionReq, text_format:BaseModel) -> any:
         """
-        Get completion from OpenAI for a given request.
-        This method checks if the OpenAI client is initialized and manages concurrent requests using a semaphore.
-        :param text_format:
+        Asynchronously retrieves a completion from OpenAI's API based on the provided request.
+        Utilizes Redis for caching responses to reduce API calls and improve performance.
+        Handles concurrent requests with a semaphore to limit the number of active requests.
+        Raises exceptions for API errors, caching issues, or parsing errors.
         :param req:
+        :param text_format:
         :return:
         """
+
         if type(self).client is None:
             raise Exception("OpenAI client is not initialized. Please set the API key using set_client method.")
 
@@ -38,6 +49,23 @@ class OpenAiLlmWrapper(LlmClientWrapper):
             raise Exception("Too many concurrent requests, please try again later.")
 
         # print("for req", req.prompt, "active requests:", type(self).active_req)
+        cache_key = self._generate_redis_key(req.prompt, text_format)
+        cached_response = await self.rediscache.get(cache_key)
+        criteria = None
+        if cached_response:
+            print(f"Cache hit for prompt: {req.prompt}")
+            if isinstance(cached_response, Exception):
+                print(f"Cached response is an error: {cached_response}")
+                raise cached_response
+            try:
+                criteria = text_format.model_validate_json(cached_response)
+            except Exception as e:
+                print(f"Error parsing cached response: {e}")
+                raise e
+
+            return criteria
+        print(f"Cache miss: {cache_key}, making API call...")
+
         async with type(self).sem:
             type(self).active_req += 1
             try:
@@ -47,7 +75,16 @@ class OpenAiLlmWrapper(LlmClientWrapper):
                     text_format =text_format
                 )
 
+                if isinstance(response, Exception):
+                    print(f"Error in OpenAI response: {response}")
+                    raise response
+
                 criteria = response.output_parsed
+                if not criteria:
+                    raise ValueError("No criteria extracted from OpenAI response.")
+
+                criteria_json = criteria.json() if hasattr(criteria, "json") else str(criteria)
+                await self.rediscache.set(cache_key, criteria_json, 3600)  # Cache for 1 hour
 
                 return criteria
             except Exception as e:
@@ -58,14 +95,31 @@ class OpenAiLlmWrapper(LlmClientWrapper):
 
     async def execute_multiple_prompts_parallel(self, reqs: List[GetCompletionReq], text_format:type = Text) -> List[any]:
         """
-        Execute multiple prompts in parallel using asyncio.gather.
+        Asynchronously executes multiple prompts in parallel using OpenAI's API.
+        Each request is processed concurrently, and results are returned as a list.
+        Utilizes a semaphore to limit the number of concurrent requests and manages caching for efficiency.
+        :param reqs:
         :param text_format:
-        :param reqs: List of GetCompletionReq objects.
-        :return: List of responses from OpenAI.
+        :return:
         """
+
         tasks = [self.get_completion(req, text_format) for req in reqs]
         return await asyncio.gather(*tasks, return_exceptions=True)
 
+    @staticmethod
+    def _generate_redis_key(prompt:str, resp_format:BaseModel)->str:
+        """
+        Generates a unique Redis key for caching OpenAI responses based on the prompt and response format.
+        The key is created by normalizing the prompt and response format, then hashing the resulting string
+        :param prompt:
+        :param resp_format:
+        :return:
+        """
+        normalized_prompt = prompt.strip().lower()
+        type_representation = repr(resp_format)
+        key_string = f"openai:{normalized_prompt}:{type_representation}"
+        hashed_key = hashlib.sha256(key_string.encode('utf-8')).hexdigest()
+        return f"openai:{hashed_key}"
 
 
 if __name__ == "__main__":
