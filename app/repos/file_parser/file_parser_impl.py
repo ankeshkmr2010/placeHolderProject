@@ -30,15 +30,12 @@ class FileParserImpl(Fileparser):
         match file.content_type:
             case "application/pdf":
                 # Handle PDF file parsing
-                print("Parsing PDF file")
                 content = self._parse_pdf(file)
             case "text/plain":
                 # Handle plain text file parsing
-                print("Parsing plain text file")
                 content = file.file.read().decode('utf-8')
             case _:
                 if file.filename.endswith(".docx"):
-                    print("Parsing DOCX file based on filename")
                     content = self._parse_docx(file)
                 else:
                     raise ValueError(f"Unsupported file type: {file.content_type}")
