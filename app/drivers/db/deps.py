@@ -1,7 +1,8 @@
 # app/db/deps.py
 from contextlib import asynccontextmanager
-from app.drivers.db.postgres import PostgresClient
+
 from app.drivers.db.mongo import MongoClient
+from app.drivers.db.postgres import PostgresClient
 
 
 @asynccontextmanager

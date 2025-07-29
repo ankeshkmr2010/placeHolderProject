@@ -43,12 +43,6 @@ services:
       - stubnet
     volumes:
       - pgadmin_data:/var/lib/pgadmin
-#      - ./servers.json:/pgadmin4/servers.json
-#    entrypoint:
-#      - "/bin/sh"
-#      - "-c"
-#      - "/bin/echo 'postgres:5432:*:postgres:postgres' > /tmp/pgpassfile && chmod 600 /tmp/pgpassfile && /entrypoint.sh"
-
 
   mongodb:
     image: mongo:6

@@ -5,15 +5,15 @@ from fastapi import Depends
 from sqlalchemy import text
 
 from app.drivers.cache.deps import get_redis_client
-from app.drivers.db.deps import  get_postgres_client, get_mongo_client
+from app.drivers.db.deps import get_postgres_client, get_mongo_client
 
 router = APIRouter()
 
 @router.get("/")
-async def list_items():
-    return [{"id": 1, "name": "Foo"}, {"id": 2, "name": "Bar"}]
+async def say_hi():
+    return "Hi"
 
-@router.get("/both")
+@router.get("/bothDb")
 async def get_both():
     async with AsyncExitStack() as stack:
         pg = await stack.enter_async_context(get_postgres_client())

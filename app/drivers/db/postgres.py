@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from app.drivers.configs.config import Config
 from app.drivers.db.base import BaseDBClient
 
+
 class PostgresClient(BaseDBClient):
     def __init__(self):
         self.engine = create_async_engine(Config.POSTGRES_URL, echo=False)

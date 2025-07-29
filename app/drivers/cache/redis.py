@@ -1,12 +1,14 @@
-import  redis.asyncio as redis
+from typing import Any
+
+import redis.asyncio as redis
 
 from app.drivers.cache.base import BaseCache
 
-connection_string = "redis://:@localhost:6379/0"
+
 
 
 class RedisCache(BaseCache):
-    def __init__(self):
+    def __init__(self, connection_string):
         self.client = redis.from_url(connection_string)
         print(f"Connecting to Redis at {connection_string}")
 
@@ -19,7 +21,7 @@ class RedisCache(BaseCache):
     async def get(self, key: str):
         return await self.client.get(key)
 
-    async def set(self, key: str, value: str, ex: int = None):
+    async def set(self, key: str, value: Any, ex: int = None):
         return await self.client.set(key, value, ex=ex)
 
     async def delete(self, key: str):
